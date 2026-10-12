@@ -6,7 +6,7 @@ body{margin:0;background:var(--sage);color:var(--navy);font:16px/1.5 system-ui,-
 @media(max-width:720px){.app{grid-template-columns:1fr}}
 .side,.main{background:var(--cream);border:1.5px solid var(--line);border-radius:14px;padding:16px;box-shadow:0 3px 0 rgba(139,94,60,.28)}
 .main{min-height:460px;min-width:0}.side{position:sticky;top:14px}
-@media(max-width:720px){.side{position:static}#steps{display:flex;flex-wrap:wrap;gap:6px}.step{width:auto;border:1.5px solid var(--line);border-radius:999px;padding:3px 11px;font-size:12.5px}.step.on{background:var(--navy);color:var(--cream);border-color:var(--navy)}.side .sb{display:inline-block;width:auto;margin:8px 8px 0 0}.side h4{display:none}}
+
 .side h4{margin:0 0 8px;color:var(--navy);opacity:.8;font-size:13px;letter-spacing:1.5px}
 .step{display:block;width:100%;text-align:left;border:0;background:none;padding:5px 0;color:var(--mut);font-size:14px;cursor:default}
 .step.on{color:var(--navy);font-weight:700}.step.ok{color:var(--ok)}
@@ -16,8 +16,8 @@ h1{margin:6px 0;font-size:26px;letter-spacing:1px}h2{margin:0 0 6px;font-size:1.
 .tag{display:inline-block;background:var(--navy);color:var(--cream);border-radius:6px;padding:2px 10px;font-size:12px;font-weight:700;letter-spacing:.6px;margin-bottom:8px}
 .mut{color:var(--mut)}.center{text-align:center}
 button{font:inherit;cursor:pointer;border-radius:9px;border:1.5px solid var(--brown);background:transparent;color:var(--navy);padding:9px 14px}
-button:hover:not(:disabled){background:var(--sage)}button:disabled{opacity:.45;cursor:not-allowed}
-.pri{background:var(--navy);color:var(--cream);border-color:var(--navy);font-weight:700}.pri:hover:not(:disabled){background:var(--brown);border-color:var(--brown)}
+button:disabled{opacity:.45;cursor:not-allowed}@media(hover:hover){button:hover:not(:disabled):not(.ok):not(.no):not(.pri):not(.chip){background:var(--sage)}}
+.pri{background:var(--navy);color:var(--cream);border-color:var(--navy);font-weight:700}@media(hover:hover){.pri:hover:not(:disabled){background:var(--brown);border-color:var(--brown)}}
 .case{background:var(--card);border-left:5px solid var(--brown);padding:12px 14px;border-radius:8px;margin:12px 0}
 input[type=text],textarea{font:inherit;width:100%;border-radius:9px;border:1.5px solid var(--brown);background:#fff8;color:var(--navy);padding:9px}
 textarea{min-height:88px}label{display:block;font-size:.9em;color:var(--mut);font-weight:600}
@@ -37,7 +37,7 @@ svg.net{display:block;width:100%;height:auto;background:var(--sage);border-radiu
 .net text{font-family:system-ui,sans-serif;text-anchor:middle;fill:var(--navy)}.net .nm{font-size:14px;font-weight:700}.net .st{font-size:11.5px;opacity:.8}
 .net .card0{fill:var(--cream);stroke:var(--brown);stroke-width:2}
 .net .hit{fill:var(--cream);stroke:var(--navy);stroke-width:2.5}.net .c{cursor:pointer}
-.net .c:hover .hit{stroke:var(--brown);stroke-width:4}.net .sel .hit{stroke:var(--brown);stroke-width:4.5;stroke-dasharray:8 5}
+@media(hover:hover){.net .c:hover .hit{stroke:var(--brown);stroke-width:4}}.net .sel .hit{stroke:var(--brown);stroke-width:4.5;stroke-dasharray:8 5}
 .net .t .hit{fill:#F5D9D5;stroke:var(--bad);stroke-width:3.5;stroke-dasharray:none}.net .t .st{fill:var(--bad);opacity:1;font-weight:700}
 .net .s .hit{fill:#D7EADD;stroke:var(--ok);stroke-width:3.5;stroke-dasharray:none}.net .s .st{fill:var(--ok);opacity:1;font-weight:700}
 .net .c:focus-visible .hit{stroke:var(--navy);stroke-width:5;stroke-dasharray:none}
@@ -73,7 +73,7 @@ body[data-v="0"] .main{background:none;border:0;box-shadow:none;padding:0;min-he
 .hero .tag{background:var(--brown);color:var(--cream);letter-spacing:0}
 .hero .lead{margin:0 0 22px;max-width:46ch;font-size:1.05em;opacity:.9}
 .hero .pri{background:var(--cream);color:var(--navy);border-color:var(--cream)}
-.hero .pri:hover:not(:disabled){background:var(--sage);border-color:var(--sage)}
+@media(hover:hover){.hero .pri:hover:not(:disabled){background:var(--sage);border-color:var(--sage)}}
 .hero :focus-visible{outline-color:var(--cream)}
 button.big{font-size:1.15em;padding:14px 28px;border-radius:12px;box-shadow:0 4px 0 var(--brown)}
 .hero-art{display:grid;grid-template-columns:1fr 1fr;gap:12px}
@@ -107,12 +107,69 @@ body[data-v="1"] .main{align-self:stretch;display:flex;flex-direction:column;min
 .m1p .alert{margin:0}
 .m1p .fb{margin:0;flex:1;min-height:0;overflow:auto}
 .m1p>button{width:100%}
+
+/* ===== Mobile & sentuh ===== */
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
+button,.slot,.net .c{touch-action:manipulation;-webkit-tap-highlight-color:rgba(10,41,71,.12)}
+.chip{-webkit-touch-callout:none}
+@media(pointer:coarse){button{min-height:44px}.chip{min-height:48px}}
+.pclose{display:none}
+.jrow{display:flex;gap:10px;margin-top:8px}.jrow button{flex:1;min-height:46px;font-weight:700}
+.btnrow{display:flex;gap:10px;flex-wrap:wrap}
+.net.tall .nm{font-size:12.5px}.net.tall .st{font-size:10.5px}
+.slot.ready{border-style:solid;border-color:var(--navy);background:var(--sage);color:var(--navy);animation:rdy 1s ease-in-out infinite alternate}
+@keyframes rdy{to{box-shadow:0 0 0 4px rgba(10,41,71,.18)}}
+@keyframes sup{from{transform:translateY(18px);opacity:0}}
+@media(prefers-reduced-motion:reduce){.slot.ready,#pn:not(.empty){animation:none}}
+.dkh{margin:12px 0 4px}
+
+/* Layar kecil: HP potret, dan HP lanskap */
+@media(max-width:720px),(max-height:520px){
+.app{grid-template-columns:1fr}
+.side{position:static;display:flex;align-items:center;flex-wrap:wrap;gap:6px 10px;padding:8px 12px}
+.side h4{display:none}
+#steps{display:block;flex:1;min-width:0}
+.step{display:none;width:auto;padding:0;border:0}
+.step.on{display:block;font-size:14px}
+.side .bar{order:3;flex:0 0 100%;margin:0}
+.side .sb{display:inline-block;width:auto;margin:0;padding:6px 12px;font-size:13px}
+.ov{place-items:start center;overflow:auto;padding-top:max(16px,env(safe-area-inset-top,0px))}
+.fb table{display:block;overflow-x:auto}
+/* Mission 01: bar bawah + panel sebagai bottom sheet */
+.m1p{flex-direction:row;align-items:center;gap:8px}
+.m1p .alert{flex:1;min-width:0;padding:7px 10px;font-size:.88em}
+.m1p>button{width:auto;flex:none;padding:9px 14px}
+#pn{position:fixed;left:10px;right:10px;bottom:calc(10px + env(safe-area-inset-bottom,0px));z-index:60;max-height:52vh;max-height:52dvh;overflow:auto;background:var(--cream);border:2px solid var(--navy);border-radius:16px;box-shadow:0 10px 30px rgba(10,41,71,.4);padding:12px 14px;margin:0}
+#pn.empty{display:none}
+#pn:not(.empty){animation:sup .18s ease-out}
+.pclose{display:block;float:right;margin:-2px 0 4px 8px;padding:4px 10px;min-height:36px;font-size:.85em}
+}
 @media(max-width:720px){
-body[data-v="1"] .app{grid-template-columns:1fr;grid-template-rows:auto minmax(0,1fr);gap:8px;padding:8px}
-body[data-v="1"] .side{padding:8px 10px}
+body[data-v="0"] .app{padding:10px}
+.main{padding:14px}
+.hero{padding:22px 18px;gap:18px}
+.hero .lead{margin-bottom:18px}
+button.big{width:100%}
+.dfoot{justify-content:center}.dfoot .mut{flex:1 1 100%;text-align:center}
+body[data-v="1"] .app{grid-template-rows:auto minmax(0,1fr);gap:8px;padding:8px}
+body[data-v="1"] .side{padding:6px 12px}
 body[data-v="1"] .main{padding:10px}
-.m1h p{display:none}
+.m1h h2{font-size:1.05em}.m1h p{font-size:.85em}
 .m1b{grid-template-columns:1fr;grid-template-rows:minmax(0,1fr) auto;gap:8px}
-.m1p{gap:6px}.m1p .fb{flex:none;max-height:26vh}
-.m1p .alert{padding:5px 10px;font-size:.9em}
+.pcard{padding:8px;margin:7px 0}.slot{min-height:56px}
+.btnrow button{flex:1 1 100%}
+/* Mission 02B: kartu risiko menempel di bawah layar */
+.dock{position:sticky;bottom:0;z-index:20;margin:14px -14px 0;padding:8px 14px calc(10px + env(safe-area-inset-bottom,0px));background:var(--cream);border-top:2px solid var(--line);box-shadow:0 -8px 16px rgba(10,41,71,.14);max-height:46vh;max-height:46dvh;overflow-y:auto;overscroll-behavior:contain}
+.dock .fb{margin:0 0 6px;padding:6px 10px;font-size:.88em}
+.dkh{margin:0 0 4px;font-size:.88em}
+.dock .pool{margin-top:0;padding:8px;gap:6px;min-height:0;flex-direction:column}
+.dock .chip{width:100%;padding:8px 10px;font-size:.88em}
+}
+/* HP lanskap: diagram dibuat lebih tinggi, halaman boleh digulir */
+@media(max-height:520px) and (min-width:721px){
+body[data-v="1"] .app{grid-template-rows:auto minmax(0,1fr);gap:8px;padding:8px}
+body[data-v="1"] .main{padding:10px}
+.m1b{grid-template-columns:1fr;grid-template-rows:auto auto}
+.m1d svg.net{height:auto;min-height:330px}
+.m1h p{display:none}
 }

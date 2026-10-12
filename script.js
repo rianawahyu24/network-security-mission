@@ -1,5 +1,6 @@
 const $=id=>document.getElementById(id);
 const e=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const TALL=()=>matchMedia('(max-width:720px)').matches;
 const N='#0A2947',C='#F3E4C9',B='#8B5E3C',SG='#D3D4C0';
 /* ===== Suara & confetti ===== */
 let AC=null,SND=true,LX=innerWidth/2,LY=innerHeight/3;
@@ -31,12 +32,12 @@ sign:`<rect x="-3" y="8" width="6" height="26" fill="${N}"/><rect x="-14" y="32"
 const ico=(n,s)=>`<span class="tile"><svg viewBox="-50 -45 100 90" width="${s||60}" height="${(s||60)*.9}" aria-hidden="true">${IC[n]}</svg></span>`;
 /* ===== Data ===== */
 const OBJ=[
-{id:'pw',ic:'note',n:'Password Wi-Fi',t:1,x:130,y:196,d:'SSID: SMANSA_WIFI. Password: sekolah123, sudah diketahui banyak orang.',w:'Password sederhana mudah ditebak sehingga meningkatkan risiko akses tidak sah.'},
-{id:'open',ic:'sign',n:'Wi-Fi Tamu',t:1,x:630,y:196,d:'Jaringan "SMANSA_TAMU" bisa dipakai siapa pun tanpa password.',w:'Jaringan terbuka lebih mudah ditemukan dan disambungi siapa saja.'},
-{id:'rt',ic:'router',n:'Router',t:0,x:380,y:196,d:'Router sekolah tersambung ke internet dan bekerja normal.',w:'Perangkat resmi sekolah, bukan masalah.'},
-{id:'pc',ic:'pc',n:'PC Lab',t:0,x:200,y:468,d:'Komputer lab milik sekolah, terdaftar dan dikenal.',w:'Perangkat resmi sekolah, bukan masalah.'},
-{id:'hp',ic:'phone',n:'HP Guru',t:0,x:380,y:468,d:'Ponsel guru Informatika, dikenal oleh tim jaringan.',w:'Perangkat dikenal, bukan masalah.'},
-{id:'dev',ic:'unk',n:'Unknown Device',t:1,x:560,y:468,d:'Sebuah perangkat bernama "UNKNOWN" terhubung ke Wi-Fi sekolah. Tidak ada guru atau murid yang mengenalinya.',w:'Perangkat tidak dikenal berpotensi memperoleh akses tidak sah ke jaringan.'}];
+{id:'pw',ic:'note',n:'Password Wi-Fi',t:1,x:130,y:196,tx:60,ty:144,d:'SSID: SMANSA_WIFI. Password: sekolah123, sudah diketahui banyak orang.',w:'Password sederhana mudah ditebak sehingga meningkatkan risiko akses tidak sah.'},
+{id:'open',ic:'sign',n:'Wi-Fi Tamu',t:1,x:630,y:196,tx:300,ty:144,d:'Jaringan "SMANSA_TAMU" bisa dipakai siapa pun tanpa password.',w:'Jaringan terbuka lebih mudah ditemukan dan disambungi siapa saja.'},
+{id:'rt',ic:'router',n:'Router',t:0,x:380,y:196,tx:180,ty:144,d:'Router sekolah tersambung ke internet dan bekerja normal.',w:'Perangkat resmi sekolah, bukan masalah.'},
+{id:'pc',ic:'pc',n:'PC Lab',t:0,x:200,y:468,tx:60,ty:348,d:'Komputer lab milik sekolah, terdaftar dan dikenal.',w:'Perangkat resmi sekolah, bukan masalah.'},
+{id:'hp',ic:'phone',n:'HP Guru',t:0,x:380,y:468,tx:180,ty:348,d:'Ponsel guru Informatika, dikenal oleh tim jaringan.',w:'Perangkat dikenal, bukan masalah.'},
+{id:'dev',ic:'unk',n:'Unknown Device',t:1,x:560,y:468,tx:300,ty:348,d:'Sebuah perangkat bernama "UNKNOWN" terhubung ke Wi-Fi sekolah. Tidak ada guru atau murid yang mengenalinya.',w:'Perangkat tidak dikenal berpotensi memperoleh akses tidak sah ke jaringan.'}];
 const RK=[{t:'Akses tidak sah ke jaringan',ok:1},{t:'Data berpotensi disalahgunakan',ok:1},{t:'Gangguan konektivitas',ok:1},{t:'Komputer otomatis menjadi lebih cepat',ok:0}];
 const RD='Komputer otomatis menjadi lebih cepat';
 const P=[
@@ -78,47 +79,51 @@ $('m').innerHTML=`<div class="dash">
 <div class="dfoot"><span class="mut sm">Data murid tidak disimpan. Hasil hanya lewat unduhan PDF.</span><button class="sb snb" aria-pressed="${SND}" onclick="toggleS()">♪ Suara: ${SND?'On':'Off'}</button></div></div>`}
 function openReg(){closeReg();play('tap');const o=document.createElement('div');o.id='reg';o.className='ov';
 o.innerHTML=`<div class="dlg" role="dialog" aria-modal="true" aria-labelledby="rgt"><h2 id="rgt">Siapa yang bertugas?</h2><p class="mut" style="margin:0 0 12px">Isi nama dan kelas sebelum memulai simulasi.</p>
-<label>Nama<input id="rgn" type="text" autocomplete="off" maxlength="60" value="${e(S.name)}"></label><label style="margin-top:10px">Kelas<input id="rgk" type="text" autocomplete="off" maxlength="20" placeholder="contoh: XI-3" value="${e(S.kelas)}"></label>
+<label>Nama<input id="rgn" type="text" autocomplete="off" autocapitalize="words" enterkeyhint="next" maxlength="60" value="${e(S.name)}"></label><label style="margin-top:10px">Kelas<input id="rgk" type="text" autocomplete="off" autocapitalize="characters" enterkeyhint="go" maxlength="20" placeholder="contoh: XI-3" value="${e(S.kelas)}"></label>
 <div class="acts"><button onclick="closeReg()">Batal</button><button id="rgo" class="pri" onclick="begin()">Mulai misi</button></div></div>`;
 o.addEventListener('input',regOK);
 o.addEventListener('keydown',ev=>{if(ev.key=='Escape'){closeReg();return}
-if(ev.key=='Enter'&&ev.target.tagName=='INPUT'){ev.preventDefault();begin()}
+if(ev.key=='Enter'&&ev.target.tagName=='INPUT'){ev.preventDefault();if(ev.target.id=='rgn'&&!$('rgk').value.trim())$('rgk').focus();else begin()}
 if(ev.key=='Tab'){const f=[...o.querySelectorAll('input,button:not(:disabled)')],a=f[0],z=f[f.length-1];if(ev.shiftKey&&document.activeElement===a){ev.preventDefault();z.focus()}else if(!ev.shiftKey&&document.activeElement===z){ev.preventDefault();a.focus()}}});
 o.addEventListener('pointerdown',ev=>{if(ev.target===o)closeReg()});
 document.body.appendChild(o);regOK();$(S.name.trim()?'rgk':'rgn').focus()}
 function regOK(){const n=$('rgn').value.trim(),k=$('rgk').value.trim();S.name=n;S.kelas=k;$('rgo').disabled=!(n&&k);return !!(n&&k)}
 function begin(){if(regOK())go(1)}
 function closeReg(){const o=$('reg');if(o){o.remove();const b=$('sb');if(b)b.focus()}}
-function m1(){const f=OBJ.filter(o=>o.t&&S.done[o.id]).length;
-const wired=[[380,114,380,142],[380,250,380,278]],wl=[[200,196,310,196],[450,196,560,196],[380,386,380,400],[200,400,560,400],[200,400,200,414],[380,400,380,414],[560,400,560,414]];
-const stat=o=>S.done[o.id]?(o.t?'⚠ MASALAH':'✓ AMAN'):'ketuk untuk periksa';
-const stc=(x,y,ic,n,sub)=>`<g transform="translate(${x},${y})"><rect class="card0" x="-70" y="-54" width="140" height="108" rx="12"/><g transform="translate(0,-14) scale(.85)">${IC[ic]}</g><text class="nm" y="34">${n}</text><text class="st" y="48">${sub}</text></g>`;
-$('m').innerHTML=`<div class="m1"><div class="m1h"><span class="tag">MISSION 01 · DETECT</span><h2>Temukan minimal dua masalah keamanan</h2><p class="mut">Pilih komponen pada diagram (bisa dengan Tab + Enter), lalu nilai: masalah atau aman?</p></div>
-<div class="m1b"><div class="m1d"><svg class="net" viewBox="0 0 760 528" role="group" aria-label="Diagram jaringan sekolah">${wired.map(l=>`<line x1="${l[0]}" y1="${l[1]}" x2="${l[2]}" y2="${l[3]}" stroke="${N}" stroke-width="3.5"/>`).join('')}${wl.map(l=>`<line x1="${l[0]}" y1="${l[1]}" x2="${l[2]}" y2="${l[3]}" stroke="${B}" stroke-width="3" stroke-dasharray="7 6"/>`).join('')}
-${stc(380,60,'cloud','INTERNET','jaringan luar')}${stc(380,332,'ap','Access Point','titik akses Wi-Fi')}
-${OBJ.map(o=>{const d=S.done[o.id],cl=d?(o.t?'t':'s'):'';return`<g class="c ${cl} ${S.sel==o.id?'sel':''}" transform="translate(${o.x},${o.y})" data-id="${o.id}" tabindex="0" role="button" aria-label="${o.n}, status: ${stat(o)}" onclick="pickO('${o.id}')" onkeydown="if(event.key=='Enter'||event.key==' '){event.preventDefault();pickO('${o.id}')}"><rect class="hit" x="-70" y="-54" width="140" height="108" rx="12"/><g transform="translate(0,-14) scale(.85)">${IC[o.ic]}</g><text class="nm" y="34">${o.n}</text><text class="st" y="48">${stat(o)}</text>${d?`<circle cx="62" cy="-46" r="11" fill="${o.t?'#B3372F':'#1F6E3E'}"/><text x="62" y="-41" style="fill:#fff;font-size:14px;font-weight:700">${o.t?'!':'✓'}</text>`:''}</g>`}).join('')}</svg></div>
-<div class="m1p"><div class="alert" role="status">⚠ ${f} dari 3 masalah keamanan ditemukan</div>
-<div id="pn" class="fb" role="status" aria-live="polite">${S.sel?panel(S.sel):'Pilih komponen pada diagram untuk memeriksanya.'}</div>
-<button class="pri" ${f<2?'disabled':''} onclick="go(2)">${f<2?'Temukan minimal 2 masalah dulu':'Lanjut ke Mission 02 →'}</button></div></div></div>`}
-function panel(id){const o=OBJ.find(x=>x.id==id);
-if(S.done[id])return `<b>${o.n}</b><br>${o.d}<br><br>${o.t?'<span class="x">⚠ Potential security risk.</span> ':'<span class="y">✓ Aman.</span> '}${o.w}`;
-return `<b>${o.n}</b><br>${o.d}<br><br>Apakah ini masalah keamanan?<br><button onclick="judge('${id}',1)"><span class="x">⚠ Masalah</span></button> <button onclick="judge('${id}',0)"><span class="y">✓ Aman</span></button>${S.fbk['o'+id]||''}`}
-function pickO(id){S.sel=id;play('tap');m1();document.querySelector(`[data-id="${id}"]`).focus()}
+function m1(){const T=TALL(),f=OBJ.filter(o=>o.t&&S.done[o.id]).length;
+const stat=o=>S.done[o.id]?(o.t?'⚠ MASALAH':'✓ AMAN'):(T?'ketuk untuk cek':'ketuk untuk periksa');
+const G=T?{vb:'0 0 360 390',w:108,h:84,is:.58,iy:-13,ny:24,sy:37,bx:46,by:-34,br:9,bs:12,bt:-29}:{vb:'0 0 760 528',w:140,h:108,is:.85,iy:-14,ny:34,sy:48,bx:62,by:-46,br:11,bs:14,bt:-41};
+const NET=T?[180,42]:[380,60],AP=T?[180,246]:[380,332];
+const wired=T?[[180,42,180,144],[180,144,180,246]]:[[380,114,380,142],[380,250,380,278]];
+const wl=T?[[60,144,300,144],[180,246,60,348],[180,246,180,348],[180,246,300,348]]:[[200,196,310,196],[450,196,560,196],[380,386,380,400],[200,400,560,400],[200,400,200,414],[380,400,380,414],[560,400,560,414]];
+const body=(cls,ic,n,sub)=>`<rect class="${cls}" x="${-G.w/2}" y="${-G.h/2}" width="${G.w}" height="${G.h}" rx="12"/><g transform="translate(0,${G.iy}) scale(${G.is})">${IC[ic]}</g><text class="nm" y="${G.ny}">${n}</text><text class="st" y="${G.sy}">${sub}</text>`;
+const stc=(p,ic,n,sub)=>`<g transform="translate(${p[0]},${p[1]})">${body('card0',ic,n,sub)}</g>`;
+$('m').innerHTML=`<div class="m1"><div class="m1h"><span class="tag">MISSION 01 · DETECT</span><h2>Temukan minimal dua masalah keamanan</h2><p class="mut">${T?'Ketuk komponen pada diagram, lalu nilai: masalah atau aman?':'Pilih komponen pada diagram (bisa dengan Tab + Enter), lalu nilai: masalah atau aman?'}</p></div>
+<div class="m1b"><div class="m1d"><svg class="net ${T?'tall':''}" viewBox="${G.vb}" role="group" aria-label="Diagram jaringan sekolah">${wired.map(l=>`<line x1="${l[0]}" y1="${l[1]}" x2="${l[2]}" y2="${l[3]}" stroke="${N}" stroke-width="3.5"/>`).join('')}${wl.map(l=>`<line x1="${l[0]}" y1="${l[1]}" x2="${l[2]}" y2="${l[3]}" stroke="${B}" stroke-width="3" stroke-dasharray="7 6"/>`).join('')}
+${stc(NET,'cloud','INTERNET','jaringan luar')}${stc(AP,'ap','Access Point','titik akses Wi-Fi')}
+${OBJ.map(o=>{const d=S.done[o.id],cl=d?(o.t?'t':'s'):'',p=T?[o.tx,o.ty]:[o.x,o.y];return`<g class="c ${cl} ${S.sel==o.id?'sel':''}" transform="translate(${p[0]},${p[1]})" data-id="${o.id}" tabindex="0" role="button" aria-label="${o.n}, status: ${stat(o)}" onclick="pickO('${o.id}')" onkeydown="if(event.key=='Enter'||event.key==' '){event.preventDefault();pickO('${o.id}')}">${body('hit',o.ic,o.n,stat(o))}${d?`<circle cx="${G.bx}" cy="${G.by}" r="${G.br}" fill="${o.t?'#B3372F':'#1F6E3E'}"/><text x="${G.bx}" y="${G.bt}" style="fill:#fff;font-size:${G.bs}px;font-weight:700">${o.t?'!':'✓'}</text>`:''}</g>`}).join('')}</svg></div>
+<div class="m1p"><div class="alert" role="status">⚠ ${T?f+'/3 masalah ditemukan':f+' dari 3 masalah keamanan ditemukan'}</div>
+<div id="pn" class="fb ${S.sel?'':'empty'}" role="status" aria-live="polite">${S.sel?panel(S.sel):'Pilih komponen pada diagram untuk memeriksanya.'}</div>
+<button class="pri" ${f<2?'disabled':''} onclick="go(2)">${f<2?(T?'Temukan 2 dulu':'Temukan minimal 2 masalah dulu'):(T?'Lanjut →':'Lanjut ke Mission 02 →')}</button></div></div></div>`}
+function panel(id){const o=OBJ.find(x=>x.id==id),X='<button class="pclose" onclick="closeP()" aria-label="Tutup panel">✕ Tutup</button>';
+if(S.done[id])return `${X}<b>${o.n}</b><br>${o.d}<br><br>${o.t?'<span class="x">⚠ Potential security risk.</span> ':'<span class="y">✓ Aman.</span> '}${o.w}`;
+return `${X}<b>${o.n}</b><br>${o.d}<br><br>Apakah ini masalah keamanan?<div class="jrow"><button onclick="judge('${id}',1)"><span class="x">⚠ Masalah</span></button><button onclick="judge('${id}',0)"><span class="y">✓ Aman</span></button></div>${S.fbk['o'+id]||''}`}
+function closeP(){S.sel=null;play('tap');m1()}
+function pickO(id){S.sel=id;play('tap');m1();document.querySelector(`[data-id="${id}"]`).focus({preventScroll:true})}
 function judge(id,v){const o=OBJ.find(x=>x.id==id),k='o'+id;S.A[k]=(S.A[k]||0)+1;
-if(!!o.t==!!v){S.done[id]=1;if(o.t)S.sc.t+=1/S.A[k];S.fbk[k]='';m1();$('pn').insertAdjacentHTML('afterbegin','<b class="y">✓ Tepat!</b> ');document.querySelector(`[data-id="${id}"]`).focus();play(o.t?'found':'ok');confetti(o.t?60:30)}
+if(!!o.t==!!v){S.done[id]=1;if(o.t)S.sc.t+=1/S.A[k];S.fbk[k]='';m1();$('pn').insertAdjacentHTML('afterbegin','<b class="y">✓ Tepat!</b> ');document.querySelector(`[data-id="${id}"]`).focus({preventScroll:true});play(o.t?'found':'ok');confetti(o.t?60:30)}
 else{S.fbk[k]='<div class="fb no"><span class="x">✗ Belum tepat.</span> Baca lagi deskripsinya dan pikirkan dampaknya bagi jaringan.</div>';$('pn').innerHTML=panel(id);play('bad')}}
-function m2(){const h=[['2A · RISIKO','Pilih semua risiko dari perangkat asing yang terhubung'],['2B · HUBUNGKAN','Hubungkan MASALAH dengan RISIKO'],['2C · PENYEBAB','Apa penyebab tiap masalah?']][S.ph];let b='';
+function m2(){const h=[['2A · RISIKO','Pilih semua risiko dari perangkat asing yang terhubung'],['2B · HUBUNGKAN','Hubungkan MASALAH dengan RISIKO'],['2C · PENYEBAB','Apa penyebab tiap masalah?']][S.ph];let b='';const same=S._p===S.ph,y0=scrollY;S._p=S.ph;
 if(S.ph==0){const hit=S.rk.filter(i=>RK[i].ok).length,bad=S.rk.filter(i=>!RK[i].ok).length;
 b=`<div class="scene">${ico('unk',64)}<div><b>Perangkat asing terhubung ke jaringan</b><br><span class="mut">Boleh pilih lebih dari satu risiko.</span></div></div>`+RK.map((r,i)=>`<button class="opt" aria-pressed="${S.rk.includes(i)}" ${S.rkD?'disabled':''} onclick="tg(${i})">${S.rk.includes(i)?'☑':'☐'} ${r.t}${S.rkD?(r.ok?' — <span class="y">✓ risiko</span>':' — <span class="x">✗ bukan risiko</span>'):''}</button>`).join('')+
 (S.rkD?`<div class="fb ${hit==3&&!bad?'ok':'no'}" role="status"><b>${hit}/3 risks identified</b>${bad?'<br>Ada pilihan yang bukan risiko.':''}${hit<3?'<br>Risiko yang terlewat ditandai "✓ risiko" di atas.':''}</div><p><button class="pri" onclick="S.ph=1;m2()">Lanjut →</button></p>`:`<p><button class="pri" ${S.rk.length?'':'disabled'} onclick="subR()">Submit</button></p>`)}
 if(S.ph==1){const rs=S.shufR||(S.shufR=[...P.map(p=>p.r),RD].sort(()=>Math.random()-.5));const used=Object.values(S.m2),all=P.every((p,i)=>S.m2[i]!==undefined);
-b=`<p class="mut">Seret kartu risiko ke kotak putus-putus di samping masalah. Di HP atau keyboard: pilih kartunya, lalu pilih kotaknya.</p>
-${P.map((p,i)=>{const f=S.m2[i]!==undefined;return`<div class="pcard"><div class="pc-h">${ico(p.ic,58)}<span>${p.n}</span></div><div class="slot ${f?'full':''} ${S.shake===i?'shake':''}" data-i="${i}" tabindex="0" role="button" aria-label="Kotak risiko untuk ${p.n}" onclick="slotClick(${i})" onkeydown="if(event.key=='Enter'||event.key==' '){event.preventDefault();slotClick(${i})}">${f?'✓ '+rs[S.m2[i]]:'⬇ Seret risiko ke sini'}</div></div>`}).join('')}
-<div class="mut" style="margin:12px 0 4px"><b>Kartu risiko</b></div><div class="pool">${rs.map((r,k)=>used.includes(k)?'':`<button class="chip ${S.pickK===k?'sel':''}" onpointerdown="dstart(event,${k})" onclick="if(event.detail===0){S.pickK=${k};m2()}"><span class="grip">⠿</span>${r}</button>`).join('')||'<span class="mut">Semua kartu sudah terpasang.</span>'}</div>
-<div class="fb" role="status" aria-live="polite">${S.fbk.m2||'Setiap masalah punya dampak sebab-akibat yang berbeda.'}</div><p><button class="pri" ${all?'':'disabled'} onclick="S.ph=2;play('tap');m2()">Lanjut →</button></p>`}
+b=`<p class="mut">Ketuk satu kartu risiko di bagian bawah, lalu ketuk kotak masalah yang cocok. Kartu juga bisa diseret.</p>
+${P.map((p,i)=>{const f=S.m2[i]!==undefined;return`<div class="pcard"><div class="pc-h">${ico(p.ic,58)}<span>${p.n}</span></div><div class="slot ${f?'full':''} ${!f&&S.pickK!==null?'ready':''} ${S.shake===i?'shake':''}" data-i="${i}" tabindex="0" role="button" aria-label="Kotak risiko untuk ${p.n}" onclick="slotClick(${i})" onkeydown="if(event.key=='Enter'||event.key==' '){event.preventDefault();slotClick(${i})}">${f?'✓ '+rs[S.m2[i]]:(S.pickK!==null?'Ketuk di sini untuk menaruh kartu':'⬇ Taruh kartu risiko di sini')}</div></div>`}).join('')}
+<div class="dock"><div class="fb" role="status" aria-live="polite">${S.fbk.m2||'Setiap masalah punya dampak sebab-akibat yang berbeda.'}</div><div class="mut dkh"><b>Kartu risiko</b>${S.pickK!==null?' · satu kartu dipilih':''}</div><div class="pool">${rs.map((r,k)=>used.includes(k)?'':`<button class="chip ${S.pickK===k?'sel':''}" onpointerdown="dstart(event,${k})" onclick="if(event.detail===0){S.pickK=${k};m2()}"><span class="grip">⠿</span>${r}</button>`).join('')||'<span class="mut">Semua kartu sudah terpasang.</span>'}</div></div><p><button class="pri" ${all?'':'disabled'} onclick="S.ph=2;play('tap');m2()">Lanjut →</button></p>`}
 if(S.ph==2){const all=P.every((p,i)=>S.ok['c'+i]);
 b=P.map((p,i)=>`<div class="pcard col"><div class="pc-h">${ico(p.ic,52)}<span>${p.n}: apa penyebabnya?</span></div><div>${mcq('c'+i)}</div></div>`).join('')+`<p><button class="pri" ${all?'':'disabled'} onclick="go(3)">Lanjut ke Mission 03 →</button></p>`}
-$('m').innerHTML=`<span class="tag">MISSION 02 · ${h[0]}</span><h2>${h[1]}</h2>`+b;S.shake=null}
+$('m').innerHTML=`<span class="tag">MISSION 02 · ${h[0]}</span><h2>${h[1]}</h2>`+b;S.shake=null;same?scrollTo(0,y0):scrollTo(0,0)}
 function tg(i){const k=S.rk.indexOf(i);k<0?S.rk.push(i):S.rk.splice(k,1);play('tap');m2()}
 function subR(){S.rkD=true;const hit=S.rk.filter(i=>RK[i].ok).length,bad=S.rk.filter(i=>!RK[i].ok).length;m2();if(hit==3&&!bad){play('ok');confetti(50)}else play('bad')}
 function slotClick(i){if(S.pickK!==null&&S.m2[i]===undefined)drop(i,S.pickK);else if(S.pickK===null){S.fbk.m2='Pilih dulu satu kartu risiko di bawah.';m2()}}
@@ -127,14 +132,15 @@ if(S.shufR[k]==P[i].r){good=true;S.m2[i]=k;S.sc.r+=1/S.A[key];S.fbk.m2='<span cl
 else{S.shake=i;S.fbk.m2='<span class="x">✗ '+(S.shufR[k]==RD?'Perangkat asing atau password lemah tidak membuat komputer lebih cepat.':'Belum sesuai. Pikirkan dampak langsung dari masalah tersebut.')+'</span> Kartu kembali ke bawah.'}
 m2();play(good?'ok':'bad');if(good)confetti(45)}
 function dstart(ev,k){ev.preventDefault();const el=ev.currentTarget,r=el.getBoundingClientRect(),g=el.cloneNode(true);g.className='chip ghost';g.style.width=r.width+'px';document.body.appendChild(g);
-DR={k,el,g,ox:ev.clientX-r.left,oy:ev.clientY-r.top,sx:ev.clientX,sy:ev.clientY,mv:false};el.classList.add('lift');dmove(ev);play('tap');
-addEventListener('pointermove',dmove);addEventListener('pointerup',dend);addEventListener('pointercancel',dend)}
-function under(ev){DR.g.style.display='none';const t=document.elementFromPoint(ev.clientX,ev.clientY);DR.g.style.display='';return t&&t.closest('.slot:not(.full)')}
-function dmove(ev){DR.g.style.left=ev.clientX-DR.ox+'px';DR.g.style.top=ev.clientY-DR.oy+'px';if(Math.abs(ev.clientX-DR.sx)+Math.abs(ev.clientY-DR.sy)>6)DR.mv=true;
+DR={k,el,g,ox:ev.clientX-r.left,oy:ev.clientY-r.top,sx:ev.clientX,sy:ev.clientY,mv:false,up:ev.pointerType=='touch'?56:0,x:ev.clientX,y:ev.clientY};el.classList.add('lift');dmove(ev);play('tap');
+addEventListener('pointermove',dmove);addEventListener('pointerup',dend);addEventListener('pointercancel',dend);
+DR.t=setInterval(()=>{if(DR&&DR.y<110&&scrollY>0){scrollBy(0,-14);dmove({clientX:DR.x,clientY:DR.y})}},16)}
+function under(ev){DR.g.style.display='none';const t=document.elementFromPoint(ev.clientX,ev.clientY-DR.up);DR.g.style.display='';return t&&t.closest('.slot:not(.full)')}
+function dmove(ev){DR.g.style.left=ev.clientX-DR.ox+'px';DR.g.style.top=ev.clientY-DR.oy-DR.up+'px';DR.x=ev.clientX;DR.y=ev.clientY;if(Math.abs(ev.clientX-DR.sx)+Math.abs(ev.clientY-DR.sy)>6)DR.mv=true;
 document.querySelectorAll('.slot').forEach(s=>s.classList.remove('over'));const t=under(ev);if(t)t.classList.add('over')}
 function dend(ev){removeEventListener('pointermove',dmove);removeEventListener('pointerup',dend);removeEventListener('pointercancel',dend);
-const t=ev.type=='pointerup'?under(ev):null,k=DR.k,mv=DR.mv;DR.g.remove();DR=null;
-if(t)drop(+t.dataset.i,k);else if(!mv){S.pickK=S.pickK===k?null:k;m2()}else m2()}
+const t=ev.type=='pointerup'?under(ev):null,k=DR.k,mv=DR.mv;DR.g.remove();clearInterval(DR.t);DR=null;
+if(t)drop(+t.dataset.i,k);else if(!mv){S.pickK=S.pickK===k?null:k;S.fbk.m2=S.pickK===null?'':'Kartu dipilih. Sekarang ketuk kotak masalah yang cocok.';m2()}else m2()}
 function O(key){return P[+key[1]][key[0]]}
 function mcq(key){const os=O(key);return sh(key,os).map((k,n)=>{const c=S.ch[key+k];return`<button class="opt ${c||''}" ${S.ok[key]?'disabled':''} onclick="po('${key}',${k})"><b>${'ABCD'[n]}.</b> ${os[k].t}${c=='ok'?' ✓':c=='no'?' ✗':''}</button>`}).join('')+`<div role="status" aria-live="polite">${S.fbk[key]?`<div class="fb ${S.ok[key]?'ok':'no'}">${S.fbk[key]}</div>`:''}</div>`}
 function po(key,k){const o=O(key)[k];S.A[key]=(S.A[key]||0)+1;S.ch[key+k]=o.ok?'ok':'no';
@@ -146,12 +152,12 @@ function cmpBox(i){const p=P[i],r=S.rs[i],m=p.m,c=v=>v?'<span class="y">✓ ada<
 return`<div class="fb"><div class="cols"><div><b>Jawabanmu</b><p style="margin:4px 0">${e(r.t)}</p></div><div><b>Contoh jawaban</b><p style="margin:4px 0">${p.y}</p></div></div>
 <table><tr><th>Kriteria</th><th>Di jawabanmu</th><th>Di contoh jawaban</th></tr><tr><td>Tindakan</td><td>${c(r.a)}</td><td>${m.a}</td></tr><tr><td>Risiko/dampak</td><td>${c(r.b)}</td><td>${m.b}</td></tr><tr><td>Sebab-akibat</td><td>${c(r.c)}</td><td>${m.c}</td></tr></table>
 <div class="mut" style="margin-top:6px">Jawabanmu tidak harus sama persis. Yang penting ketiga kriteria terpenuhi.</div></div>`}
-function m3(){const p=P[S.i],k='a'+S.i,ok=S.ok[k],rs=S.rs[S.i];let b='';
+function m3(){const y0=scrollY,p=P[S.i],k='a'+S.i,ok=S.ok[k],rs=S.rs[S.i];let b='';
 if(ok&&!rs)b=`<p><b>Mengapa tindakan tersebut meningkatkan keamanan jaringan?</b></p><textarea id="why" aria-label="Alasan" placeholder="Tulis alasanmu: apa tindakannya, apa risikonya, dan mengapa tindakan itu efektif..."></textarea><p><button class="pri" onclick="sub()">Kirim alasan</button></p><p id="wm" class="mut" role="status"></p>`;
 if(rs){b=`<div class="fb"><b>Alasanmu:</b> ${e(rs.t)}<br><b>Level alasan: ${lv(S.i)}/3</b>${ckl(rs)}${lv(S.i)<3?'<span class="mut">Naikkan levelnya dengan melengkapi poin yang bertanda ✗.</span>':''}</div>
 <p class="sec"><button aria-expanded="${!!S.cmp[S.i]}" onclick="cmp()">${S.cmp[S.i]?'Sembunyikan perbandingan':'Bandingkan dengan contoh jawaban'}</button></p>${S.cmp[S.i]?cmpBox(S.i):''}
 <p><button class="pri" onclick="nx()">${S.i<2?'Kasus berikutnya →':'Lihat Final Report →'}</button></p>`}
-$('m').innerHTML=`<span class="tag">MISSION 03 · SECURE · ${S.i+1}/3</span><div class="pc-h" style="margin-bottom:8px">${ico(p.ic,64)}<h2 style="margin:0">${p.n}</h2></div><p>Kamu tim keamanan jaringan. Apa tindakan yang akan kamu ambil?</p>${mcq(k)}${b}`}
+$('m').innerHTML=`<span class="tag">MISSION 03 · SECURE · ${S.i+1}/3</span><div class="pc-h" style="margin-bottom:8px">${ico(p.ic,64)}<h2 style="margin:0">${p.n}</h2></div><p>Kamu tim keamanan jaringan. Apa tindakan yang akan kamu ambil?</p>${mcq(k)}${b}`;scrollTo(0,y0)}
 function sub(){const t=$('why').value;if(t.trim().length<12){$('wm').textContent='Tulis alasan minimal satu kalimat.';return}S.rs[S.i]=Object.assign({t:t.trim()},ev(t));m3();if(S.rs[S.i].l==3){play('win');confetti(110,innerWidth/2,innerHeight*.4,1.2)}else play('ok')}
 function nx(){play('tap');if(S.i<2){S.i++;m3();window.scrollTo(0,0)}else go(4)}
 function rep(){const s=S.sc,pct=Math.round((s.t+s.r+s.c+s.s)/12*100),q=[0,1,2].reduce((a,i)=>a+lv(i),0);
@@ -160,7 +166,7 @@ $('m').innerHTML=`<div class="center"><span class="tag">MISSION COMPLETE</span><
 <div class="scorebar"><span>SECURITY SCORE</span><div class="track"><i style="width:${pct}%"></i></div><b>${pct}%</b></div></div>
 <p class="center">You successfully analyzed the network security problem.</p><p class="mut center">Skor hanya gamifikasi, bukan nilai akademik. Percobaan ulang mengurangi poin sebagian.</p>
 <h2>Alasanmu</h2>${P.map((p,i)=>`<div class="fb"><div class="pc-h" style="margin-bottom:6px">${ico(p.ic,40)}<span>${p.n}</span></div>${S.rs[i]?e(S.rs[i].t)+'<br><b>Level '+lv(i)+'/3</b>'+ckl(S.rs[i]):'-'}</div>`).join('')}
-<p><button class="pri" id="dl" onclick="pdf()">⬇ Unduh hasil (PDF)</button> <button onclick="S=fresh();go(0)">Ulangi misi</button></p><p id="cm" class="mut" role="status"></p>`;
+<p class="btnrow"><button class="pri" id="dl" onclick="pdf()">⬇ Unduh hasil (PDF)</button> <button onclick="S=fresh();go(0)">Ulangi misi</button></p><p id="cm" class="mut" role="status"></p>`;
 }
 /*PDF_START*/
 function buildPDF(J,D){
@@ -225,4 +231,7 @@ try{const doc=buildPDF(window.jspdf.jsPDF,D);
 if(dl){await dl.save({filename:fn,data:doc.output('blob')});m.textContent='✓ PDF disimpan.'}
 else{doc.save(fn);m.textContent='✓ PDF diunduh. Jika tidak muncul, buka halaman ini di tab sendiri (bukan pratinjau).'}}
 catch(x){m.textContent=x&&x.code=='declined'?'Unduhan dibatalkan.':'PDF gagal dibuat. Coba lagi.'}}
+let LK=TALL()+'|'+matchMedia('(max-height:520px)').matches,RT=0;
+addEventListener('resize',()=>{clearTimeout(RT);RT=setTimeout(()=>{const k=TALL()+'|'+matchMedia('(max-height:520px)').matches;if(k!==LK){LK=k;if(S.v==1&&!DR)m1()}},150)});
+addEventListener('keydown',ev=>{if(ev.key=='Escape'&&S.v==1&&S.sel&&!$('reg'))closeP()});
 go(0);
