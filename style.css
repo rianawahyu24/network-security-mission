@@ -173,3 +173,8 @@ body[data-v="1"] .main{padding:10px}
 .m1d svg.net{height:auto;min-height:330px}
 .m1h p{display:none}
 }
+
+/* ===== Status autosave ===== */
+.save-status{font-size:.82em;line-height:1.5;color:var(--ok);margin:12px 0 4px;overflow-wrap:anywhere}
+.save-status.save-error{color:var(--bad);font-weight:600}
+#student-label{overflow-wrap:anywhere;margin-bottom:4px}

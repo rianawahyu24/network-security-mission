@@ -9,7 +9,7 @@ function ac(){if(!SND)return null;try{AC=AC||new(window.AudioContext||window.web
 function tone(f,t0,d,type,v){const a=ac();if(!a)return;const o=a.createOscillator(),g=a.createGain(),s=a.currentTime+t0;o.type=type||'sine';o.frequency.value=f;g.gain.setValueAtTime(0,s);g.gain.linearRampToValueAtTime(v||.12,s+.01);g.gain.exponentialRampToValueAtTime(.0001,s+d);o.connect(g);g.connect(a.destination);o.start(s);o.stop(s+d+.03)}
 const SFX={tap(){tone(520,0,.06,'triangle',.08)},ok(){tone(660,0,.13);tone(880,.1,.2)},bad(){tone(220,0,.18,'sawtooth',.08);tone(165,.14,.26,'sawtooth',.08)},found(){tone(440,0,.09,'square',.06);tone(587,.09,.09,'square',.06);tone(784,.18,.2,'square',.06)},win(){[523,659,784,1047,1319].forEach((f,i)=>tone(f,i*.11,.32,'triangle',.13))}};
 const play=n=>{if(SND)try{SFX[n]()}catch(x){}};
-function toggleS(){SND=!SND;document.querySelectorAll('.snb').forEach(b=>{b.textContent='♪ Suara: '+(SND?'On':'Off');b.setAttribute('aria-pressed',SND)});if(SND)play('tap')}
+function toggleS(){SND=!SND;document.querySelectorAll('.snb').forEach(b=>{b.textContent='♪ Suara: '+(SND?'On':'Off');b.setAttribute('aria-pressed',SND)});if(SND)play('tap');saveProgress()}
 const CF=$('cf'),cx=CF.getContext('2d');let PA=[],raf=0;
 function confetti(n,ox,oy,sp){if(matchMedia('(prefers-reduced-motion: reduce)').matches)return;CF.width=innerWidth;CF.height=innerHeight;
 const col=[N,B,'#2E9D5B','#E0A030','#FFFFFF','#B3372F'];sp=sp||1;ox=ox==null?LX:ox;oy=oy==null?LY:oy;
@@ -62,10 +62,71 @@ const RB=/tidak sah|tidak berwenang|orang asing|pihak (luar|asing|lain)|disalahg
 const RC1=/karena|sebab|sehingga|supaya|agar|maka|akibatnya|jadi/i,RC2=/sulit|susah|tidak (mudah|bisa|dapat)|mencegah|menghindari|mengurangi|menutup|membatasi|menghalangi|memperkecil|lebih aman|terlindungi/i;
 function ev(t){const a=RA.test(t),b=RB.test(t),c=RC1.test(t)&&RC2.test(t);let l=(a?1:0)+(b?1:0)+(c?1:0);if(t.trim().length<12)l=Math.min(l,1);return{a,b,c,l:Math.max(l,1)}}
 const lv=i=>S.rs[i]?S.rs[i].l:0;
-const fresh=()=>({v:0,ph:0,i:0,done:{},sel:null,pickK:null,shake:null,A:{},sc:{t:0,r:0,c:0,s:0},rk:[],rkD:false,m2:{},shuf:{},ch:{},ok:{},fbk:{},rs:[],cmp:{},name:'',kelas:'',shufR:null});
+const fresh=()=>({v:0,ph:0,i:0,done:{},sel:null,pickK:null,shake:null,A:{},sc:{t:0,r:0,c:0,s:0},rk:[],rkD:false,m2:{},shuf:{},ch:{},ok:{},fbk:{},rs:[],cmp:{},name:'',kelas:'',shufR:null,drafts:{}});
 let S=fresh(),DR=null;
+/* ===== Autosave lokal ===== */
+const SAVE_KEY='network-security-mission:progress:v1:'+location.pathname;
+const SAVE_VERSION=1;
+let saveError='',loadNotice='',savedAt=null;
+function storageStatus(){
+const msg=saveError||loadNotice||(savedAt?'✓ Progres tersimpan di browser ini · '+new Date(savedAt).toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'}):'Progres akan tersimpan otomatis di browser ini.');
+document.querySelectorAll('[data-save-status]').forEach(el=>{if(el.textContent!==msg)el.textContent=msg;el.classList.toggle('save-error',!!saveError)});
+const who=$('student-label');if(who)who.textContent=S.name?S.name+' · '+S.kelas:'';
+}
+function saveProgress(){
+try{
+const state={...S};delete state._p;state.shake=null;state.pickK=null;
+const now=Date.now();
+localStorage.setItem(SAVE_KEY,JSON.stringify({version:SAVE_VERSION,savedAt:now,sound:SND,state}));
+savedAt=now;saveError='';
+}catch(err){saveError='⚠ Progres belum tersimpan. Penyimpanan browser diblokir atau penuh. Hindari refresh sampai hasil PDF diunduh.'}
+storageStatus();
+}
+function validState(s){
+const obj=x=>!!x&&typeof x==='object'&&!Array.isArray(x);
+const range=(x,n)=>Number.isInteger(x)&&x>=0&&x<n;
+const perm=(a,n)=>Array.isArray(a)&&a.length===n&&new Set(a).size===n&&a.every(x=>range(x,n));
+if(!obj(s)||!range(s.v,5)||!range(s.ph,3)||!range(s.i,3)||typeof s.name!=='string'||typeof s.kelas!=='string')return false;
+if(s.v>0&&(!s.name.trim()||!s.kelas.trim()))return false;
+if(!['done','A','sc','m2','shuf','ch','ok','fbk','cmp','drafts'].every(k=>obj(s[k])))return false;
+if(!['t','r','c','s'].every(k=>typeof s.sc[k]==='number'&&Number.isFinite(s.sc[k])&&s.sc[k]>=0&&s.sc[k]<=3.00001))return false;
+if(!Object.entries(s.done).every(([k,v])=>OBJ.some(o=>o.id===k)&&v===1))return false;
+if(s.sel!==null&&!OBJ.some(o=>o.id===s.sel))return false;
+if(!Object.values(s.A).every(v=>Number.isInteger(v)&&v>0))return false;
+if(!Array.isArray(s.rk)||!s.rk.every(x=>range(x,RK.length))||new Set(s.rk).size!==s.rk.length||typeof s.rkD!=='boolean')return false;
+if(s.shufR!==null&&(!Array.isArray(s.shufR)||s.shufR.length!==4||new Set(s.shufR).size!==4||!s.shufR.every(r=>[...P.map(p=>p.r),RD].includes(r))))return false;
+if(!Object.entries(s.m2).every(([k,v])=>/^[0-2]$/.test(k)&&range(v,4)&&s.shufR&&s.shufR[v]===P[+k].r))return false;
+if(!Object.entries(s.shuf).every(([k,v])=>/^[ca][0-2]$/.test(k)&&perm(v,O(k).length)))return false;
+if(!Object.entries(s.ch).every(([k,v])=>/^[ca][0-2][0-3]$/.test(k)&&['ok','no'].includes(v)))return false;
+if(!Object.entries(s.ok).every(([k,v])=>/^[ca][0-2]$/.test(k)&&v===1))return false;
+if(!Object.values(s.fbk).every(v=>typeof v==='string'))return false;
+if(!Object.entries(s.drafts).every(([k,v])=>/^[0-2]$/.test(k)&&typeof v==='string'))return false;
+if(!Array.isArray(s.rs)||s.rs.length>3||!s.rs.every(r=>r==null||(obj(r)&&typeof r.t==='string'&&range(r.l-1,3)&&['a','b','c'].every(k=>typeof r[k]==='boolean'))))return false;
+return true;
+}
+function restoreProgress(){
+try{
+const raw=localStorage.getItem(SAVE_KEY);if(!raw)return;
+const data=JSON.parse(raw);
+if(data.version!==SAVE_VERSION||!validState(data.state))throw new Error('Invalid snapshot');
+S=Object.assign(fresh(),data.state);S.shake=null;S.pickK=null;delete S._p;
+SND=data.sound!==false;savedAt=typeof data.savedAt==='number'?data.savedAt:null;
+loadNotice=S.v>0?'✓ Progres sebelumnya dipulihkan. Lanjutkan dari bagian terakhir.':'';
+}catch(err){loadNotice='⚠ Progres sebelumnya tidak dapat dibaca. Silakan mulai misi baru.'}
+}
+function resetProgress(){
+if(!confirm('Mulai misi baru? Progres siswa yang tersimpan di browser ini akan diganti. Unduh hasil PDF terlebih dahulu jika masih diperlukan.'))return;
+if(DR){DR.g.remove();clearInterval(DR.t);DR=null;removeEventListener('pointermove',dmove);removeEventListener('pointerup',dend);removeEventListener('pointercancel',dend)}
+S=fresh();loadNotice='';savedAt=null;go(0);
+}
+document.addEventListener('input',ev=>{
+if(ev.target.id==='why'&&S.v===3){S.drafts[S.i]=ev.target.value;loadNotice='';saveProgress()}
+});
+addEventListener('pagehide',saveProgress);
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden')saveProgress()});
+
 function side(){$('steps').innerHTML=STEPS.map((s,i)=>`<div class="step ${i<S.v?'ok':i==S.v?'on':''}" ${i==S.v?'aria-current="step"':''}>${i<S.v?'✓ ':i==S.v?'▶ ':'○ '}${s}</div>`).join('');$('pb').style.width=S.v*25+'%'}
-function go(v,ph){closeReg();document.body.dataset.v=v;S.v=v;S.ph=ph||0;S.i=0;side();R();$('m').focus();window.scrollTo(0,0);if(v>0)play(v==4?'win':'tap');if(v==4)setTimeout(finale,150)}
+function go(v,ph){loadNotice='';closeReg();document.body.dataset.v=v;S.v=v;S.ph=ph||0;S.i=0;side();R();$('m').focus();window.scrollTo(0,0);if(v>0)play(v==4?'win':'tap');if(v==4)setTimeout(finale,150)}
 function R(){[start,m1,m2,m3,rep][S.v]()}
 function sh(key,arr){return S.shuf[key]||(S.shuf[key]=arr.map((x,i)=>i).sort(()=>Math.random()-.5))}
 const fmt=x=>(Math.round(x*10)/10).toString();
@@ -76,7 +137,7 @@ $('m').innerHTML=`<div class="dash">
 <div class="hero-art" aria-hidden="true">${['router','note','unk','sign'].map(n=>ico(n,84)).join('')}</div></section>
 <section class="mcards" aria-label="Alur simulasi">${M.map((x,i)=>`<div class="mc"><span class="mn">${i+1}</span><div><b>${x[1]}</b><div class="mut sm">${x[2]}</div></div></div>`).join('')}</section>
 <section class="case"><b>Case file #01</b><br>08.15, Laboratorium Komputer SMAN 1 Bandung. Beberapa komputer mengalami koneksi internet lambat. Guru menemukan perangkat yang tidak dikenal terhubung ke Wi-Fi sekolah. Password Wi-Fi sederhana dan sudah diketahui banyak orang. Tim jaringan diminta melakukan pemeriksaan.</section>
-<div class="dfoot"><span class="mut sm">Data murid tidak disimpan. Hasil hanya lewat unduhan PDF.</span><button class="sb snb" aria-pressed="${SND}" onclick="toggleS()">♪ Suara: ${SND?'On':'Off'}</button></div></div>`}
+<p class="save-status" data-save-status role="status"></p><div class="dfoot"><span class="mut sm">Progres tersimpan otomatis di browser dan perangkat ini. Unduh PDF untuk mengumpulkan hasil.</span><button class="sb snb" aria-pressed="${SND}" onclick="toggleS()">♪ Suara: ${SND?'On':'Off'}</button></div></div>`;saveProgress()}
 function openReg(){closeReg();play('tap');const o=document.createElement('div');o.id='reg';o.className='ov';
 o.innerHTML=`<div class="dlg" role="dialog" aria-modal="true" aria-labelledby="rgt"><h2 id="rgt">Siapa yang bertugas?</h2><p class="mut" style="margin:0 0 12px">Isi nama dan kelas sebelum memulai simulasi.</p>
 <label>Nama<input id="rgn" type="text" autocomplete="off" autocapitalize="words" enterkeyhint="next" maxlength="60" value="${e(S.name)}"></label><label style="margin-top:10px">Kelas<input id="rgk" type="text" autocomplete="off" autocapitalize="characters" enterkeyhint="go" maxlength="20" placeholder="contoh: XI-3" value="${e(S.kelas)}"></label>
@@ -87,7 +148,7 @@ if(ev.key=='Enter'&&ev.target.tagName=='INPUT'){ev.preventDefault();if(ev.target
 if(ev.key=='Tab'){const f=[...o.querySelectorAll('input,button:not(:disabled)')],a=f[0],z=f[f.length-1];if(ev.shiftKey&&document.activeElement===a){ev.preventDefault();z.focus()}else if(!ev.shiftKey&&document.activeElement===z){ev.preventDefault();a.focus()}}});
 o.addEventListener('pointerdown',ev=>{if(ev.target===o)closeReg()});
 document.body.appendChild(o);regOK();$(S.name.trim()?'rgk':'rgn').focus()}
-function regOK(){const n=$('rgn').value.trim(),k=$('rgk').value.trim();S.name=n;S.kelas=k;$('rgo').disabled=!(n&&k);return !!(n&&k)}
+function regOK(){const n=$('rgn').value.trim(),k=$('rgk').value.trim();S.name=n;S.kelas=k;$('rgo').disabled=!(n&&k);saveProgress();return !!(n&&k)}
 function begin(){if(regOK())go(1)}
 function closeReg(){const o=$('reg');if(o){o.remove();const b=$('sb');if(b)b.focus()}}
 function m1(){const T=TALL(),f=OBJ.filter(o=>o.t&&S.done[o.id]).length;
@@ -104,7 +165,7 @@ ${stc(NET,'cloud','INTERNET','jaringan luar')}${stc(AP,'ap','Access Point','titi
 ${OBJ.map(o=>{const d=S.done[o.id],cl=d?(o.t?'t':'s'):'',p=T?[o.tx,o.ty]:[o.x,o.y];return`<g class="c ${cl} ${S.sel==o.id?'sel':''}" transform="translate(${p[0]},${p[1]})" data-id="${o.id}" tabindex="0" role="button" aria-label="${o.n}, status: ${stat(o)}" onclick="pickO('${o.id}')" onkeydown="if(event.key=='Enter'||event.key==' '){event.preventDefault();pickO('${o.id}')}">${body('hit',o.ic,o.n,stat(o))}${d?`<circle cx="${G.bx}" cy="${G.by}" r="${G.br}" fill="${o.t?'#B3372F':'#1F6E3E'}"/><text x="${G.bx}" y="${G.bt}" style="fill:#fff;font-size:${G.bs}px;font-weight:700">${o.t?'!':'✓'}</text>`:''}</g>`}).join('')}</svg></div>
 <div class="m1p"><div class="alert" role="status">⚠ ${T?f+'/3 masalah ditemukan':f+' dari 3 masalah keamanan ditemukan'}</div>
 <div id="pn" class="fb ${S.sel?'':'empty'}" role="status" aria-live="polite">${S.sel?panel(S.sel):'Pilih komponen pada diagram untuk memeriksanya.'}</div>
-<button class="pri" ${f<2?'disabled':''} onclick="go(2)">${f<2?(T?'Temukan 2 dulu':'Temukan minimal 2 masalah dulu'):(T?'Lanjut →':'Lanjut ke Mission 02 →')}</button></div></div></div>`}
+<button class="pri" ${f<2?'disabled':''} onclick="go(2)">${f<2?(T?'Temukan 2 dulu':'Temukan minimal 2 masalah dulu'):(T?'Lanjut →':'Lanjut ke Mission 02 →')}</button></div></div></div>`;saveProgress()}
 function panel(id){const o=OBJ.find(x=>x.id==id),X='<button class="pclose" onclick="closeP()" aria-label="Tutup panel">✕ Tutup</button>';
 if(S.done[id])return `${X}<b>${o.n}</b><br>${o.d}<br><br>${o.t?'<span class="x">⚠ Potential security risk.</span> ':'<span class="y">✓ Aman.</span> '}${o.w}`;
 return `${X}<b>${o.n}</b><br>${o.d}<br><br>Apakah ini masalah keamanan?<div class="jrow"><button onclick="judge('${id}',1)"><span class="x">⚠ Masalah</span></button><button onclick="judge('${id}',0)"><span class="y">✓ Aman</span></button></div>${S.fbk['o'+id]||''}`}
@@ -112,7 +173,7 @@ function closeP(){S.sel=null;play('tap');m1()}
 function pickO(id){S.sel=id;play('tap');m1();document.querySelector(`[data-id="${id}"]`).focus({preventScroll:true})}
 function judge(id,v){const o=OBJ.find(x=>x.id==id),k='o'+id;S.A[k]=(S.A[k]||0)+1;
 if(!!o.t==!!v){S.done[id]=1;if(o.t)S.sc.t+=1/S.A[k];S.fbk[k]='';m1();$('pn').insertAdjacentHTML('afterbegin','<b class="y">✓ Tepat!</b> ');document.querySelector(`[data-id="${id}"]`).focus({preventScroll:true});play(o.t?'found':'ok');confetti(o.t?60:30)}
-else{S.fbk[k]='<div class="fb no"><span class="x">✗ Belum tepat.</span> Baca lagi deskripsinya dan pikirkan dampaknya bagi jaringan.</div>';$('pn').innerHTML=panel(id);play('bad')}}
+else{S.fbk[k]='<div class="fb no"><span class="x">✗ Belum tepat.</span> Baca lagi deskripsinya dan pikirkan dampaknya bagi jaringan.</div>';$('pn').innerHTML=panel(id);play('bad')}saveProgress()}
 function m2(){const h=[['2A · RISIKO','Pilih semua risiko dari perangkat asing yang terhubung'],['2B · HUBUNGKAN','Hubungkan MASALAH dengan RISIKO'],['2C · PENYEBAB','Apa penyebab tiap masalah?']][S.ph];let b='';const same=S._p===S.ph,y0=scrollY;S._p=S.ph;
 if(S.ph==0){const hit=S.rk.filter(i=>RK[i].ok).length,bad=S.rk.filter(i=>!RK[i].ok).length;
 b=`<div class="scene">${ico('unk',64)}<div><b>Perangkat asing terhubung ke jaringan</b><br><span class="mut">Boleh pilih lebih dari satu risiko.</span></div></div>`+RK.map((r,i)=>`<button class="opt" aria-pressed="${S.rk.includes(i)}" ${S.rkD?'disabled':''} onclick="tg(${i})">${S.rk.includes(i)?'☑':'☐'} ${r.t}${S.rkD?(r.ok?' — <span class="y">✓ risiko</span>':' — <span class="x">✗ bukan risiko</span>'):''}</button>`).join('')+
@@ -123,7 +184,7 @@ ${P.map((p,i)=>{const f=S.m2[i]!==undefined;return`<div class="pcard"><div class
 <div class="dock"><div class="fb" role="status" aria-live="polite">${S.fbk.m2||'Setiap masalah punya dampak sebab-akibat yang berbeda.'}</div><div class="mut dkh"><b>Kartu risiko</b>${S.pickK!==null?' · satu kartu dipilih':''}</div><div class="pool">${rs.map((r,k)=>used.includes(k)?'':`<button class="chip ${S.pickK===k?'sel':''}" onpointerdown="dstart(event,${k})" onclick="if(event.detail===0){S.pickK=${k};m2()}"><span class="grip">⠿</span>${r}</button>`).join('')||'<span class="mut">Semua kartu sudah terpasang.</span>'}</div></div><p><button class="pri" ${all?'':'disabled'} onclick="S.ph=2;play('tap');m2()">Lanjut →</button></p>`}
 if(S.ph==2){const all=P.every((p,i)=>S.ok['c'+i]);
 b=P.map((p,i)=>`<div class="pcard col"><div class="pc-h">${ico(p.ic,52)}<span>${p.n}: apa penyebabnya?</span></div><div>${mcq('c'+i)}</div></div>`).join('')+`<p><button class="pri" ${all?'':'disabled'} onclick="go(3)">Lanjut ke Mission 03 →</button></p>`}
-$('m').innerHTML=`<span class="tag">MISSION 02 · ${h[0]}</span><h2>${h[1]}</h2>`+b;S.shake=null;same?scrollTo(0,y0):scrollTo(0,0)}
+$('m').innerHTML=`<span class="tag">MISSION 02 · ${h[0]}</span><h2>${h[1]}</h2>`+b;S.shake=null;same?scrollTo(0,y0):scrollTo(0,0);saveProgress()}
 function tg(i){const k=S.rk.indexOf(i);k<0?S.rk.push(i):S.rk.splice(k,1);play('tap');m2()}
 function subR(){S.rkD=true;const hit=S.rk.filter(i=>RK[i].ok).length,bad=S.rk.filter(i=>!RK[i].ok).length;m2();if(hit==3&&!bad){play('ok');confetti(50)}else play('bad')}
 function slotClick(i){if(S.pickK!==null&&S.m2[i]===undefined)drop(i,S.pickK);else if(S.pickK===null){S.fbk.m2='Pilih dulu satu kartu risiko di bawah.';m2()}}
@@ -153,12 +214,12 @@ return`<div class="fb"><div class="cols"><div><b>Jawabanmu</b><p style="margin:4
 <table><tr><th>Kriteria</th><th>Di jawabanmu</th><th>Di contoh jawaban</th></tr><tr><td>Tindakan</td><td>${c(r.a)}</td><td>${m.a}</td></tr><tr><td>Risiko/dampak</td><td>${c(r.b)}</td><td>${m.b}</td></tr><tr><td>Sebab-akibat</td><td>${c(r.c)}</td><td>${m.c}</td></tr></table>
 <div class="mut" style="margin-top:6px">Jawabanmu tidak harus sama persis. Yang penting ketiga kriteria terpenuhi.</div></div>`}
 function m3(){const y0=scrollY,p=P[S.i],k='a'+S.i,ok=S.ok[k],rs=S.rs[S.i];let b='';
-if(ok&&!rs)b=`<p><b>Mengapa tindakan tersebut meningkatkan keamanan jaringan?</b></p><textarea id="why" aria-label="Alasan" placeholder="Tulis alasanmu: apa tindakannya, apa risikonya, dan mengapa tindakan itu efektif..."></textarea><p><button class="pri" onclick="sub()">Kirim alasan</button></p><p id="wm" class="mut" role="status"></p>`;
+if(ok&&!rs)b=`<p><b>Mengapa tindakan tersebut meningkatkan keamanan jaringan?</b></p><textarea id="why" aria-label="Alasan" placeholder="Tulis alasanmu: apa tindakannya, apa risikonya, dan mengapa tindakan itu efektif...">${e(S.drafts[S.i]||'')}</textarea><p><button class="pri" onclick="sub()">Kirim alasan</button></p><p id="wm" class="mut" role="status"></p>`;
 if(rs){b=`<div class="fb"><b>Alasanmu:</b> ${e(rs.t)}<br><b>Level alasan: ${lv(S.i)}/3</b>${ckl(rs)}${lv(S.i)<3?'<span class="mut">Naikkan levelnya dengan melengkapi poin yang bertanda ✗.</span>':''}</div>
 <p class="sec"><button aria-expanded="${!!S.cmp[S.i]}" onclick="cmp()">${S.cmp[S.i]?'Sembunyikan perbandingan':'Bandingkan dengan contoh jawaban'}</button></p>${S.cmp[S.i]?cmpBox(S.i):''}
 <p><button class="pri" onclick="nx()">${S.i<2?'Kasus berikutnya →':'Lihat Final Report →'}</button></p>`}
-$('m').innerHTML=`<span class="tag">MISSION 03 · SECURE · ${S.i+1}/3</span><div class="pc-h" style="margin-bottom:8px">${ico(p.ic,64)}<h2 style="margin:0">${p.n}</h2></div><p>Kamu tim keamanan jaringan. Apa tindakan yang akan kamu ambil?</p>${mcq(k)}${b}`;scrollTo(0,y0)}
-function sub(){const t=$('why').value;if(t.trim().length<12){$('wm').textContent='Tulis alasan minimal satu kalimat.';return}S.rs[S.i]=Object.assign({t:t.trim()},ev(t));m3();if(S.rs[S.i].l==3){play('win');confetti(110,innerWidth/2,innerHeight*.4,1.2)}else play('ok')}
+$('m').innerHTML=`<span class="tag">MISSION 03 · SECURE · ${S.i+1}/3</span><div class="pc-h" style="margin-bottom:8px">${ico(p.ic,64)}<h2 style="margin:0">${p.n}</h2></div><p>Kamu tim keamanan jaringan. Apa tindakan yang akan kamu ambil?</p>${mcq(k)}${b}`;scrollTo(0,y0);saveProgress()}
+function sub(){const t=$('why').value;S.drafts[S.i]=t;saveProgress();if(t.trim().length<12){$('wm').textContent='Tulis alasan minimal satu kalimat.';return}S.rs[S.i]=Object.assign({t:t.trim()},ev(t));m3();if(S.rs[S.i].l==3){play('win');confetti(110,innerWidth/2,innerHeight*.4,1.2)}else play('ok')}
 function nx(){play('tap');if(S.i<2){S.i++;m3();window.scrollTo(0,0)}else go(4)}
 function rep(){const s=S.sc,pct=Math.round((s.t+s.r+s.c+s.s)/12*100),q=[0,1,2].reduce((a,i)=>a+lv(i),0);
 $('m').innerHTML=`<div class="center"><span class="tag">MISSION COMPLETE</span><p class="mut" style="margin:0">${e(S.name)} ${e(S.kelas)}</p></div>
@@ -166,7 +227,7 @@ $('m').innerHTML=`<div class="center"><span class="tag">MISSION COMPLETE</span><
 <div class="scorebar"><span>SECURITY SCORE</span><div class="track"><i style="width:${pct}%"></i></div><b>${pct}%</b></div></div>
 <p class="center">You successfully analyzed the network security problem.</p><p class="mut center">Skor hanya gamifikasi, bukan nilai akademik. Percobaan ulang mengurangi poin sebagian.</p>
 <h2>Alasanmu</h2>${P.map((p,i)=>`<div class="fb"><div class="pc-h" style="margin-bottom:6px">${ico(p.ic,40)}<span>${p.n}</span></div>${S.rs[i]?e(S.rs[i].t)+'<br><b>Level '+lv(i)+'/3</b>'+ckl(S.rs[i]):'-'}</div>`).join('')}
-<p class="btnrow"><button class="pri" id="dl" onclick="pdf()">⬇ Unduh hasil (PDF)</button> <button onclick="S=fresh();go(0)">Ulangi misi</button></p><p id="cm" class="mut" role="status"></p>`;
+<p class="btnrow"><button class="pri" id="dl" onclick="pdf()">⬇ Unduh hasil (PDF)</button> <button onclick="resetProgress()">Ulangi misi</button></p><p id="cm" class="mut" role="status"></p>`;saveProgress();
 }
 /*PDF_START*/
 function buildPDF(J,D){
@@ -234,4 +295,7 @@ catch(x){m.textContent=x&&x.code=='declined'?'Unduhan dibatalkan.':'PDF gagal di
 let LK=TALL()+'|'+matchMedia('(max-height:520px)').matches,RT=0;
 addEventListener('resize',()=>{clearTimeout(RT);RT=setTimeout(()=>{const k=TALL()+'|'+matchMedia('(max-height:520px)').matches;if(k!==LK){LK=k;if(S.v==1&&!DR)m1()}},150)});
 addEventListener('keydown',ev=>{if(ev.key=='Escape'&&S.v==1&&S.sel&&!$('reg'))closeP()});
-go(0);
+restoreProgress();
+document.body.dataset.v=S.v;
+document.querySelectorAll('.snb').forEach(b=>{b.textContent='♪ Suara: '+(SND?'On':'Off');b.setAttribute('aria-pressed',SND)});
+side();R();storageStatus();
